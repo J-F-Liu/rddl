@@ -51,7 +51,6 @@ fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<PrimitiveValue>> 
 }
 
 fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<Vec<PrimitiveValue>>> {
-	// let size = sym(b'[') - space() + unsigned_integer("u32".to_string()) - space() - sym(b']') - space();
 	sym(b'{') * space() * list(vector(type_name) - space(), sym(b',') * space()) - sym(b'}')
 }
 
@@ -60,7 +59,7 @@ fn custom_item() -> Parser<u8, DataItem> {
 	let properties = sym(b'(') * space() * list(property, sym(b',') * space()) - sym(b')') - space();
 	let properties = properties.map(|properties| properties.into_iter().collect::<HashMap<_, _>>());
 	let data_items = sym(b'{') * space() * call(data_item).repeat(0..) - sym(b'}');
-	let custom = identifier() - space() + name().opt() - space() + properties.opt() + data_items;
+	let custom = identifier() - space() + name().opt() + properties.opt() + data_items;
 	custom.map(|(((structure, name), properties), items)| {
 		DataItem::Custom {
 			name: name,
@@ -68,7 +67,7 @@ fn custom_item() -> Parser<u8, DataItem> {
 			properties: properties.unwrap_or(HashMap::new()),
 			items: items,
 		}
-	})
+	}).name("custom item")
 }
 
 fn name() -> Parser<u8, Name> {
@@ -77,14 +76,14 @@ fn name() -> Parser<u8, Name> {
 
 fn identifier() -> Parser<u8, String> {
 	let identifier = (is_a(alpha) | sym(b'_')) + (is_a(alphanum) | sym(b'_')).repeat(0..);
-	identifier.collect().map(|bytes| String::from_utf8(bytes).unwrap())
+	identifier.collect().convert(|bytes| String::from_utf8(bytes))
 }
 
 fn primitive_type() -> Parser<u8, String> {
 	(seq(b"bool") | seq(b"u8") | seq(b"u16") | seq(b"u32") | seq(b"u64") | seq(b"i8") |
 	 seq(b"i16") | seq(b"i32") | seq(b"i64") | seq(b"f32") | seq(b"f64") |
 	 seq(b"str") | seq(b"ref") | seq(b"type"))
-		.map(|bytes| String::from_utf8(bytes).unwrap())
+		.convert(|bytes| String::from_utf8(bytes))
 }
 
 fn primitive_value<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveValue> {
