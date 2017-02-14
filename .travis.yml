@@ -3,7 +3,7 @@ sudo: false
 
 # run builds for all the trains (and more)
 rust:
-  - nightly
+  - stable
 
 # load travis-cargo
 before_script:
@@ -14,8 +14,7 @@ before_script:
 script:
   - |
       travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo bench
+      travis-cargo test
 
 env:
   global:
