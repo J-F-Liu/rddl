@@ -8,11 +8,11 @@ pub enum DataItem {
 	},
 	Vector {
 		name: Option<Name>,
-		elems: PrimitiveVector,
+		vector: PrimitiveVector,
 	},
 	Matrix {
 		name: Option<Name>,
-		rows: Vec<PrimitiveVector>,
+		matrix: PrimitiveMatrix,
 	},
 	Custom {
 		name: Option<Name>,
@@ -41,7 +41,7 @@ pub enum Scope {
 	Local,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimitiveValue {
 	Bool(bool),
 	I8(i8),
@@ -59,7 +59,7 @@ pub enum PrimitiveValue {
 	Type(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimitiveVector {
 	Bool(Vec<bool>),
 	I8(Vec<i8>),
@@ -74,4 +74,21 @@ pub enum PrimitiveVector {
 	F64(Vec<f64>),
 	Str(Vec<String>),
 	Type(Vec<String>),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum PrimitiveMatrix {
+	Bool(Vec<Vec<bool>>),
+	I8(Vec<Vec<i8>>),
+	I16(Vec<Vec<i16>>),
+	I32(Vec<Vec<i32>>),
+	I64(Vec<Vec<i64>>),
+	U8(Vec<Vec<u8>>),
+	U16(Vec<Vec<u16>>),
+	U32(Vec<Vec<u32>>),
+	U64(Vec<Vec<u64>>),
+	F32(Vec<Vec<f32>>),
+	F64(Vec<Vec<f64>>),
+	Str(Vec<Vec<String>>),
+	Type(Vec<Vec<String>>),
 }

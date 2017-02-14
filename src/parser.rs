@@ -24,17 +24,17 @@ fn primitive_item() -> Parser<u8, DataItem> {
 }
 
 fn primitive_data(type_name: String) -> Parser<u8, DataItem> {
-	vector(type_name.clone()).map(move |elems| {
+	vector(type_name.clone()).map(move |vector| {
 		DataItem::Vector {
 			name: None,
-			elems: elems,
+			vector: vector,
 		}
 	}).name("vector value")
 	|
-	matrix(type_name.clone()).map(move |rows| {
+	matrix(type_name.clone()).map(move |matrix| {
 		DataItem::Matrix {
 			name: None,
-			rows: rows,
+			matrix: matrix,
 		}
 	}).name("matrix value")
 	|
@@ -66,8 +66,24 @@ fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveVector> {
 	sym(b'{') * space() * values - sym(b'}')
 }
 
-fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<PrimitiveVector>> {
-	sym(b'{') * space() * list(vector(type_name) - space(), sym(b',') * space()) - sym(b'}')
+fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveMatrix> {
+	let matrix = match type_name.as_str() {
+		"bool" => list(sym(b'{') * space() * list(parse_bool() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|vals| PrimitiveMatrix::Bool(vals)),
+		"i8" => list(sym(b'{') * space() * list(parse_i8() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I8(nums)),
+		"i16" => list(sym(b'{') * space() * list(parse_i16() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I16(nums)),
+		"i32" => list(sym(b'{') * space() * list(parse_i32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I32(nums)),
+		"i64" => list(sym(b'{') * space() * list(parse_i64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I64(nums)),
+		"u8" => list(sym(b'{') * space() * list(parse_u8() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U8(nums)),
+		"u16" => list(sym(b'{') * space() * list(parse_u16() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U16(nums)),
+		"u32" => list(sym(b'{') * space() * list(parse_u32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U32(nums)),
+		"u64" => list(sym(b'{') * space() * list(parse_u64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U64(nums)),
+		"f32" => list(sym(b'{') * space() * list(parse_f32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F32(nums)),
+		"f64" => list(sym(b'{') * space() * list(parse_f64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F64(nums)),
+		"str" => list(sym(b'{') * space() * list(string() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|texts| PrimitiveMatrix::Str(texts)),
+		"type" => list(sym(b'{') * space() * list(primitive_type() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|names| PrimitiveMatrix::Type(names)),
+		_ => unreachable!()
+	};
+	sym(b'{') * space() * matrix - sym(b'}')
 }
 
 fn custom_item() -> Parser<u8, DataItem> {
@@ -238,7 +254,7 @@ mod tests {
 		}");
 		assert_eq!(primitive_item().parse(&mut input), Ok(DataItem::Vector {
 			name: Some((Scope::Global, "num".to_string())),
-			elems: PrimitiveVector::U32(vec![
+			vector: PrimitiveVector::U32(vec![
 				1094861636,
 				0x41424344,
 				0o10120441504,
