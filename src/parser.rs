@@ -60,6 +60,7 @@ fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveVector> {
 		"f32" => list(parse_f32() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::F32(nums)),
 		"f64" => list(parse_f64() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::F64(nums)),
 		"str" => list(string() - space(), sym(b',') * space()).map(|texts| PrimitiveVector::Str(texts)),
+		"ref" => list(reference() - space(), sym(b',') * space()).map(|refs| PrimitiveVector::Ref(refs)),
 		"type" => list(primitive_type() - space(), sym(b',') * space()).map(|names| PrimitiveVector::Type(names)),
 		_ => unreachable!()
 	};
@@ -80,6 +81,7 @@ fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveMatrix> {
 		"f32" => list(sym(b'{') * space() * list(parse_f32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F32(nums)),
 		"f64" => list(sym(b'{') * space() * list(parse_f64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F64(nums)),
 		"str" => list(sym(b'{') * space() * list(string() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|texts| PrimitiveMatrix::Str(texts)),
+		"ref" => list(sym(b'{') * space() * list(reference() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|refs| PrimitiveMatrix::Ref(refs)),
 		"type" => list(sym(b'{') * space() * list(primitive_type() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|names| PrimitiveMatrix::Type(names)),
 		_ => unreachable!()
 	};
@@ -132,7 +134,7 @@ fn primitive_value<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveVal
 		"f32" => parse_f32().map(|num|PrimitiveValue::F32(num)),
 		"f64" => parse_f64().map(|num|PrimitiveValue::F64(num)),
 		"str" => string().map(|text| PrimitiveValue::Str(text)),
-		"ref" => reference(),
+		"ref" => reference().map(|refer|PrimitiveValue::Ref(refer)),
 		"type" => primitive_type().map(|name| PrimitiveValue::Type(name)),
 		_ => unreachable!()
 	}
@@ -145,7 +147,7 @@ fn property_value() -> Parser<u8, PrimitiveValue> {
 	| parse_i64().map(|num|PrimitiveValue::I64(num))
 	| parse_f64().map(|num|PrimitiveValue::F64(num))
 	| string().map(|text| PrimitiveValue::Str(text))
-	| reference()
+	| reference().map(|refer|PrimitiveValue::Ref(refer))
 	| primitive_type().map(|name| PrimitiveValue::Type(name))
 	)
 }
@@ -222,16 +224,16 @@ fn string() -> Parser<u8, String> {
 		| sym(b'n').map(|_|b'\n') | sym(b'r').map(|_|b'\r') | sym(b't').map(|_|b'\t');
 	let escape_sequence = sym(b'\\') * special_char;
 	let utf8_string = (none_of(b"\\\"") | escape_sequence).repeat(1..).convert(|bytes|String::from_utf8(bytes));
-	let hex_char = seq(b"\\x") * is_a(hex_digit).repeat(2..3).map(hex_digits_to_char);
+	let hex_char = seq(b"\\x") * is_a(hex_digit).repeat(2).map(hex_digits_to_char);
 	let unicode_char = seq(b"\\u{") * is_a(hex_digit).repeat(1..7).map(hex_digits_to_char) - sym(b'}');
 	let unicode_string = (hex_char | unicode_char).repeat(1..).map(|chars|chars.into_iter().collect::<String>());
 	let string = sym(b'"') * (utf8_string | unicode_string).repeat(0..) - sym(b'"');
 	string.map(|strings|strings.concat())
 }
 
-fn reference() -> Parser<u8, PrimitiveValue> {
+fn reference() -> Parser<u8, Ref> {
 	let path = name() + (sym(b'%') * identifier() - space()).repeat(0..);
-	path.map(|(name, items)| PrimitiveValue::Ref(name, items))
+	path.map(|(name, items)| Ref{name: name, path: items})
 }
 
 fn space() -> Parser<u8, ()> {

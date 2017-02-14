@@ -42,6 +42,12 @@ pub enum Scope {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Ref {
+	pub name: Name,
+	pub path: Vec<String>
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrimitiveValue {
 	Bool(bool),
 	I8(i8),
@@ -55,7 +61,7 @@ pub enum PrimitiveValue {
 	F32(f32),
 	F64(f64),
 	Str(String),
-	Ref(Name, Vec<String>),
+	Ref(Ref),
 	Type(String),
 }
 
@@ -73,6 +79,7 @@ pub enum PrimitiveVector {
 	F32(Vec<f32>),
 	F64(Vec<f64>),
 	Str(Vec<String>),
+	Ref(Vec<Ref>),
 	Type(Vec<String>),
 }
 
@@ -90,5 +97,6 @@ pub enum PrimitiveMatrix {
 	F32(Vec<Vec<f32>>),
 	F64(Vec<Vec<f64>>),
 	Str(Vec<Vec<String>>),
+	Ref(Vec<Vec<Ref>>),
 	Type(Vec<Vec<String>>),
 }
