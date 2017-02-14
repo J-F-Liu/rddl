@@ -46,11 +46,27 @@ fn primitive_data(type_name: String) -> Parser<u8, DataItem> {
 	}).name("primitive value")
 }
 
-fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<PrimitiveValue>> {
-	sym(b'{') * space() * list(primitive_value(type_name) - space(), sym(b',') * space()) - sym(b'}')
+fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveVector> {
+	let values = match type_name.as_str() {
+		"bool" => list(parse_bool() - space(), sym(b',') * space()).map(|vals| PrimitiveVector::Bool(vals)),
+		"i8" => list(parse_i8() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::I8(nums)),
+		"i16" => list(parse_i16() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::I16(nums)),
+		"i32" => list(parse_i32() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::I32(nums)),
+		"i64" => list(parse_i64() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::I64(nums)),
+		"u8" => list(parse_u8() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::U8(nums)),
+		"u16" => list(parse_u16() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::U16(nums)),
+		"u32" => list(parse_u32() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::U32(nums)),
+		"u64" => list(parse_u64() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::U64(nums)),
+		"f32" => list(parse_f32() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::F32(nums)),
+		"f64" => list(parse_f64() - space(), sym(b',') * space()).map(|nums|PrimitiveVector::F64(nums)),
+		"str" => list(string() - space(), sym(b',') * space()).map(|texts| PrimitiveVector::Str(texts)),
+		"type" => list(primitive_type() - space(), sym(b',') * space()).map(|names| PrimitiveVector::Type(names)),
+		_ => unreachable!()
+	};
+	sym(b'{') * space() * values - sym(b'}')
 }
 
-fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<Vec<PrimitiveValue>>> {
+fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, Vec<PrimitiveVector>> {
 	sym(b'{') * space() * list(vector(type_name) - space(), sym(b',') * space()) - sym(b'}')
 }
 
@@ -87,60 +103,40 @@ fn primitive_type() -> Parser<u8, String> {
 }
 
 fn primitive_value<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveValue> {
-	if type_name == "bool" {
-		seq(b"true").map(|_| PrimitiveValue::Bool(true))
-		| seq(b"false").map(|_| PrimitiveValue::Bool(false))
-	} else if type_name.starts_with('u') {
-		unsigned_integer(type_name)
-	} else if type_name.starts_with('i') {
-		signed_integer(type_name)
-	} else if type_name.starts_with('f') {
-		float_number(type_name)
-	} else if type_name == "str" {
-		string().map(|text| PrimitiveValue::Str(text))
-	} else if type_name == "ref" {
-		reference()
-	} else if type_name == "type" {
-		primitive_type().map(|name| PrimitiveValue::Type(name))
-	} else {
-		unreachable!()
+	match type_name.as_str() {
+		"bool" => parse_bool().map(|val| PrimitiveValue::Bool(val)),
+		"i8" => parse_i8().map(|num|PrimitiveValue::I8(num)),
+		"i16" => parse_i16().map(|num|PrimitiveValue::I16(num)),
+		"i32" => parse_i32().map(|num|PrimitiveValue::I32(num)),
+		"i64" => parse_i64().map(|num|PrimitiveValue::I64(num)),
+		"u8" => parse_u8().map(|num|PrimitiveValue::U8(num)),
+		"u16" => parse_u16().map(|num|PrimitiveValue::U16(num)),
+		"u32" => parse_u32().map(|num|PrimitiveValue::U32(num)),
+		"u64" => parse_u64().map(|num|PrimitiveValue::U64(num)),
+		"f32" => parse_f32().map(|num|PrimitiveValue::F32(num)),
+		"f64" => parse_f64().map(|num|PrimitiveValue::F64(num)),
+		"str" => string().map(|text| PrimitiveValue::Str(text)),
+		"ref" => reference(),
+		"type" => primitive_type().map(|name| PrimitiveValue::Type(name)),
+		_ => unreachable!()
 	}
 }
 
 fn property_value() -> Parser<u8, PrimitiveValue> {
 	( seq(b"true").map(|_| PrimitiveValue::Bool(true))
 	| seq(b"false").map(|_| PrimitiveValue::Bool(false))
-	| unsigned_integer("u64".to_string())
-	| signed_integer("i64".to_string())
-	| float_number("f64".to_string())
+	| parse_u64().map(|num|PrimitiveValue::U64(num))
+	| parse_i64().map(|num|PrimitiveValue::I64(num))
+	| parse_f64().map(|num|PrimitiveValue::F64(num))
 	| string().map(|text| PrimitiveValue::Str(text))
 	| reference()
 	| primitive_type().map(|name| PrimitiveValue::Type(name))
 	)
 }
 
-fn signed_integer<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveValue> {
-	(sym(b'-').opt() + integer()).convert(move |(neg, (digits, radix))|{
-		match type_name.as_str() {
-			"i8" => i8::from_str_radix(&digits, radix).map(|num|PrimitiveValue::I8(if neg.is_some() {-1} else {1} * num)),
-			"i16" => i16::from_str_radix(&digits, radix).map(|num|PrimitiveValue::I16(if neg.is_some() {-1} else {1} * num)),
-			"i32" => i32::from_str_radix(&digits, radix).map(|num|PrimitiveValue::I32(if neg.is_some() {-1} else {1} * num)),
-			"i64" => i64::from_str_radix(&digits, radix).map(|num|PrimitiveValue::I64(if neg.is_some() {-1} else {1} * num)),
-			_ => unreachable!()
-		}
-	})
-}
-
-fn unsigned_integer<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveValue> {
-	integer().convert(move |(digits, radix)|{
-		match type_name.as_str() {
-			"u8" => u8::from_str_radix(&digits, radix).map(|num|PrimitiveValue::U8(num)),
-			"u16" => u16::from_str_radix(&digits, radix).map(|num|PrimitiveValue::U16(num)),
-			"u32" => u32::from_str_radix(&digits, radix).map(|num|PrimitiveValue::U32(num)),
-			"u64" => u64::from_str_radix(&digits, radix).map(|num|PrimitiveValue::U64(num)),
-			_ => unreachable!()
-		}
-	})
+fn parse_bool() -> Parser<u8, bool> {
+	seq(b"true").map(|_| true)
+	| seq(b"false").map(|_| false)
 }
 
 fn integer() -> Parser<u8, (String, u32)> {
@@ -151,18 +147,52 @@ fn integer() -> Parser<u8, (String, u32)> {
 	hexical | octal | binary | decimal
 }
 
-fn float_number<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveValue> {
+fn float_number<'a>() -> parser::Parser<'a, u8, String> {
 	let integer = one_of(b"123456789") - one_of(b"0123456789").repeat(0..) | sym(b'0');
 	let frac = sym(b'.') + one_of(b"0123456789").repeat(1..);
 	let exp = one_of(b"eE") + one_of(b"+-").opt() + one_of(b"0123456789").repeat(1..);
 	let number = sym(b'-').opt() + integer + frac.opt() + exp.opt();
-	number.collect().convert(|v|String::from_utf8(v)).convert(move |digits|{
-		match type_name.as_str() {
-			"f32" => f32::from_str(&digits).map(|num|PrimitiveValue::F32(num)),
-			"f64" => f64::from_str(&digits).map(|num|PrimitiveValue::F64(num)),
-			_ => unreachable!()
-		}
-	})
+	number.collect().convert(|v|String::from_utf8(v))
+}
+
+fn parse_u8() -> Parser<u8, u8> {
+	integer().convert(move |(digits, radix)|u8::from_str_radix(&digits, radix))
+}
+
+fn parse_u16() -> Parser<u8, u16> {
+	integer().convert(move |(digits, radix)|u16::from_str_radix(&digits, radix))
+}
+
+fn parse_u32() -> Parser<u8, u32> {
+	integer().convert(move |(digits, radix)|u32::from_str_radix(&digits, radix))
+}
+
+fn parse_u64() -> Parser<u8, u64> {
+	integer().convert(move |(digits, radix)|u64::from_str_radix(&digits, radix))
+}
+
+fn parse_i8() -> Parser<u8, i8> {
+	(sym(b'-').opt() + integer()).convert(move |(neg, (digits, radix))|i8::from_str_radix(&digits, radix).map(|num|if neg.is_some() {-1} else {1} * num))
+}
+
+fn parse_i16() -> Parser<u8, i16> {
+	(sym(b'-').opt() + integer()).convert(move |(neg, (digits, radix))|i16::from_str_radix(&digits, radix).map(|num|if neg.is_some() {-1} else {1} * num))
+}
+
+fn parse_i32() -> Parser<u8, i32> {
+	(sym(b'-').opt() + integer()).convert(move |(neg, (digits, radix))|i32::from_str_radix(&digits, radix).map(|num|if neg.is_some() {-1} else {1} * num))
+}
+
+fn parse_i64() -> Parser<u8, i64> {
+	(sym(b'-').opt() + integer()).convert(move |(neg, (digits, radix))|i64::from_str_radix(&digits, radix).map(|num|if neg.is_some() {-1} else {1} * num))
+}
+
+fn parse_f32() -> Parser<u8, f32> {
+	float_number().convert(move |digits|f32::from_str(&digits))
+}
+
+fn parse_f64() -> Parser<u8, f64> {
+	float_number().convert(move |digits|f64::from_str(&digits))
 }
 
 fn hex_digits_to_char(digits: Vec<u8>) -> char {
@@ -208,13 +238,13 @@ mod tests {
 		}");
 		assert_eq!(primitive_item().parse(&mut input), Ok(DataItem::Vector {
 			name: Some((Scope::Global, "num".to_string())),
-			elems: vec![
-				PrimitiveValue::U32(1094861636),
-				PrimitiveValue::U32(0x41424344),
-				PrimitiveValue::U32(0o10120441504),
-				PrimitiveValue::U32(0b0100_0001_0100_0010_0100_0011_0100_0100),
-				PrimitiveValue::U32(23_889),
-			]
+			elems: PrimitiveVector::U32(vec![
+				1094861636,
+				0x41424344,
+				0o10120441504,
+				0b0100_0001_0100_0010_0100_0011_0100_0100,
+				23_889,
+			])
 		}));
 	}
 }

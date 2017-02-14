@@ -8,11 +8,11 @@ pub enum DataItem {
 	},
 	Vector {
 		name: Option<Name>,
-		elems: Vec<PrimitiveValue>,
+		elems: PrimitiveVector,
 	},
 	Matrix {
 		name: Option<Name>,
-		rows: Vec<Vec<PrimitiveValue>>,
+		rows: Vec<PrimitiveVector>,
 	},
 	Custom {
 		name: Option<Name>,
@@ -57,4 +57,21 @@ pub enum PrimitiveValue {
 	Str(String),
 	Ref(Name, Vec<String>),
 	Type(String),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PrimitiveVector {
+	Bool(Vec<bool>),
+	I8(Vec<i8>),
+	I16(Vec<i16>),
+	I32(Vec<i32>),
+	I64(Vec<i64>),
+	U8(Vec<u8>),
+	U16(Vec<u16>),
+	U32(Vec<u32>),
+	U64(Vec<u64>),
+	F32(Vec<f32>),
+	F64(Vec<f64>),
+	Str(Vec<String>),
+	Type(Vec<String>),
 }
