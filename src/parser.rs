@@ -4,14 +4,14 @@ use pom::parser::*;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::char::{self, REPLACEMENT_CHARACTER};
-use super::types::*;
+use types::*;
 
 pub fn data_file() -> Parser<u8, Vec<DataItem>> {
 	space() * data_item().repeat(1..) - end()
 }
 
-fn data_item() -> Parser<u8, DataItem> {
-	(primitive_item() | custom_item()) - space()
+pub fn data_item() -> Parser<u8, DataItem> {
+	space() * (primitive_item() | custom_item()) - space()
 }
 
 fn primitive_item() -> Parser<u8, DataItem> {
@@ -69,20 +69,20 @@ fn vector<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveVector> {
 
 fn matrix<'a>(type_name: String) -> parser::Parser<'a, u8, PrimitiveMatrix> {
 	let matrix = match type_name.as_str() {
-		"bool" => list(sym(b'{') * space() * list(parse_bool() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|vals| PrimitiveMatrix::Bool(vals)),
-		"i8" => list(sym(b'{') * space() * list(parse_i8() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I8(nums)),
-		"i16" => list(sym(b'{') * space() * list(parse_i16() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I16(nums)),
-		"i32" => list(sym(b'{') * space() * list(parse_i32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I32(nums)),
-		"i64" => list(sym(b'{') * space() * list(parse_i64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::I64(nums)),
-		"u8" => list(sym(b'{') * space() * list(parse_u8() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U8(nums)),
-		"u16" => list(sym(b'{') * space() * list(parse_u16() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U16(nums)),
-		"u32" => list(sym(b'{') * space() * list(parse_u32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U32(nums)),
-		"u64" => list(sym(b'{') * space() * list(parse_u64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::U64(nums)),
-		"f32" => list(sym(b'{') * space() * list(parse_f32() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F32(nums)),
-		"f64" => list(sym(b'{') * space() * list(parse_f64() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|nums|PrimitiveMatrix::F64(nums)),
-		"str" => list(sym(b'{') * space() * list(string() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|texts| PrimitiveMatrix::Str(texts)),
-		"ref" => list(sym(b'{') * space() * list(reference() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|refs| PrimitiveMatrix::Ref(refs)),
-		"type" => list(sym(b'{') * space() * list(primitive_type() - space(), sym(b',') * space()) - sym(b'}'), sym(b',') * space()).map(|names| PrimitiveMatrix::Type(names)),
+		"bool" => list(sym(b'{') * space() * list(parse_bool() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|vals| PrimitiveMatrix::Bool(vals)),
+		"i8" => list(sym(b'{') * space() * list(parse_i8() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::I8(nums)),
+		"i16" => list(sym(b'{') * space() * list(parse_i16() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::I16(nums)),
+		"i32" => list(sym(b'{') * space() * list(parse_i32() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::I32(nums)),
+		"i64" => list(sym(b'{') * space() * list(parse_i64() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::I64(nums)),
+		"u8" => list(sym(b'{') * space() * list(parse_u8() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::U8(nums)),
+		"u16" => list(sym(b'{') * space() * list(parse_u16() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::U16(nums)),
+		"u32" => list(sym(b'{') * space() * list(parse_u32() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::U32(nums)),
+		"u64" => list(sym(b'{') * space() * list(parse_u64() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::U64(nums)),
+		"f32" => list(sym(b'{') * space() * list(parse_f32() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::F32(nums)),
+		"f64" => list(sym(b'{') * space() * list(parse_f64() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|nums|PrimitiveMatrix::F64(nums)),
+		"str" => list(sym(b'{') * space() * list(string() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|texts| PrimitiveMatrix::Str(texts)),
+		"ref" => list(sym(b'{') * space() * list(reference() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|refs| PrimitiveMatrix::Ref(refs)),
+		"type" => list(sym(b'{') * space() * list(primitive_type() - space(), sym(b',') * space()) - sym(b'}') - space(), sym(b',') * space()).map(|names| PrimitiveMatrix::Type(names)),
 		_ => unreachable!()
 	};
 	sym(b'{') * space() * matrix - sym(b'}')
