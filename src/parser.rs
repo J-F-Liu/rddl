@@ -11,7 +11,7 @@ pub fn data_file() -> Parser<u8, Vec<DataItem>> {
 }
 
 pub fn data_item() -> Parser<u8, DataItem> {
-	space() * (primitive_item() | custom_item()) - space()
+	(primitive_item() | custom_item()) - space()
 }
 
 fn primitive_item() -> Parser<u8, DataItem> {

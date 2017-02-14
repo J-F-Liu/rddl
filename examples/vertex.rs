@@ -5,8 +5,7 @@ extern crate pom;
 use pom::DataInput;
 
 fn main() {
-	let text = br"
-	VertexArray
+	let text = br"VertexArray
 	{
 		f32
 		{

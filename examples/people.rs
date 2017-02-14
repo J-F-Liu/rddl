@@ -1,5 +1,5 @@
 extern crate rddl;
-use rddl::parser::data_item;
+use rddl::parser::data_file;
 
 extern crate pom;
 use pom::DataInput;
@@ -18,6 +18,6 @@ fn main() {
 	Person $bob { Name {str "Bob"} }
 	"#;
 	let mut input = DataInput::new(text);
-	let item = data_item().parse(&mut input);
+	let item = data_file().parse(&mut input);
 	println!("{:?}", item);
 }
