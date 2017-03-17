@@ -1,16 +1,17 @@
 [package]
 name = "rddl"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Junfeng Liu <china.liujunfeng@gmail.com>"]
 homepage = "https://github.com/J-F-Liu/rddl"
 documentation = "https://docs.rs/crate/rddl/"
 repository = "https://github.com/J-F-Liu/rddl.git"
 license = "MIT"
 readme = "README.md"
-description = "Refined Data Description Language (RDDL) specification and parser library."
+description = "Refined Data Description Language (RDDL) specification and parser implementation."
+categories = ["parser-implementations"]
 
 [dependencies]
-pom = "0.9.0"
+pom = "1.0.1"
 
 [badges]
 travis-ci = { repository = "J-F-Liu/rddl" }
